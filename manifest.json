@@ -1,0 +1,8 @@
+{
+  "name": "Il gioco dei verbi",
+  "short_name": "Verbi",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fff7ed",
+  "theme_color": "#ea580c"
+}

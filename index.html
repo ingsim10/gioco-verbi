@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Il gioco dei verbi</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ea580c">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: linear-gradient(180deg, #fff7ed 0%, #fdfaf6 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    text-align: center;
+  }
+  h1 { color: #431407; font-size: 2rem; }
+  .sotto { color: #78716c; }
+  button {
+    font-family: inherit; border: none; border-radius: 16px; cursor: pointer;
+    font-weight: 700; color: #fff; background: #ea580c; font-size: 1.3rem; padding: 16px 28px;
+  }
+  button:active { transform: scale(0.97); }
+  button:disabled { background: #d6d3d1; cursor: default; transform: none; }
+  .schermo { display: flex; flex-direction: column; align-items: center; gap: 18px; width: 100%; max-width: 520px; }
+  .nascosto { display: none !important; }
+  .livello {
+    width: 100%; max-width: 400px; display: flex; justify-content: space-between;
+    align-items: center; gap: 12px; font-size: 1.1rem; padding: 16px 20px; text-align: left;
+  }
+  .livello small { font-weight: 400; opacity: .95; font-size: .85rem; white-space: nowrap; }
+  .sessione { background: #9a3412; }
+  .progresso { color: #57534e; font-size: 1.05rem; }
+  .verbo { color: #9a3412; font-size: 1.05rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+  .consegna { color: #431407; font-size: 1.2rem; font-weight: 700; }
+  .frase { font-size: 2.3rem; font-weight: 800; color: #431407; }
+  .risposte { display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: center; }
+  .risposte button { width: 100%; max-width: 380px; font-size: 1.5rem; padding: 16px; background: #0f766e; }
+  .risposte button.giusta { background: #16a34a; }
+  .risposte button.sbagliata { background: #dc2626; }
+  input[type="text"] {
+    font-size: 1.8rem; text-align: center; padding: 14px; font-family: inherit;
+    border: 3px solid #a8a29e; border-radius: 14px; width: 100%; max-width: 340px;
+  }
+  input[type="text"]:focus { outline: none; border-color: #ea580c; }
+  #feedback { font-size: 1.25rem; min-height: 1.6em; font-weight: 700; }
+  #feedback.ok { color: #16a34a; }
+  #feedback.no { color: #dc2626; }
+  .regola {
+    background: #fef9c3; border: 2px solid #facc15; color: #713f12; padding: 12px 18px;
+    border-radius: 12px; font-size: 1.05rem; line-height: 1.4; max-width: 460px; font-weight: 600;
+  }
+  .stelle { font-size: 2rem; letter-spacing: 6px; }
+  .link-menu { background: #78716c; font-size: 1rem; padding: 10px 18px; }
+  /* analisi grammaticale */
+  .gruppo { width: 100%; }
+  .gruppo h3 { color: #78716c; font-size: .9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .scelte { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .scelte button { font-size: 1rem; padding: 10px 14px; background: #0f766e; flex: 1 1 28%; }
+  .scelte button.sel { background: #1d4ed8; outline: 3px solid #93c5fd; }
+  .scelte button.giusta { background: #16a34a; outline: none; }
+  .scelte button.sbagliata { background: #dc2626; outline: none; }
+  /* coppe */
+  .coppa { width: 100%; max-width: 400px; border-radius: 18px; padding: 14px 16px; font-weight: 800; line-height: 1.3; }
+  .coppa .grande { font-size: 2.6rem; display: block; }
+  .coppa.oro { background: linear-gradient(135deg, #fde68a, #f59e0b); color: #78350f; border: 3px solid #b45309; }
+  .coppa.diamante { background: linear-gradient(135deg, #e0f2fe, #38bdf8 60%, #a5f3fc); color: #0c4a6e; border: 3px solid #0284c7; }
+  .vetrina { display: flex; flex-direction: column; gap: 10px; width: 100%; align-items: center; }
+  .link-reset { background: transparent; color: #a8a29e; font-size: .9rem; font-weight: 600; text-decoration: underline; padding: 8px; }
+  /* finestra di conferma */
+  #conferma { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 10; }
+  #conferma .scatola { background: #fff; border-radius: 20px; padding: 24px; max-width: 360px; width: 100%; display: flex; flex-direction: column; gap: 18px; }
+  #conferma p { font-size: 1.3rem; font-weight: 700; color: #431407; }
+  #conferma .due { display: flex; gap: 12px; }
+  #conferma .due button { flex: 1; }
+  #btnSi { background: #dc2626; }
+  #btnNo { background: #16a34a; }
+</style>
+</head>
+<body>
+
+<!-- MENU: le 8 sessioni -->
+<div id="menu" class="schermo">
+  <h1>🏃 Il gioco dei verbi</h1>
+  <p class="sotto">Scegli un tempo. Ogni tempo ha 5 quiz: supera un quiz con almeno <b>8 su 10</b> per sbloccare il prossimo!</p>
+  <div id="vetrinaDiamante" class="vetrina"></div>
+  <div id="elencoSessioni" class="schermo"></div>
+  <button class="link-reset" id="btnReset">🗑️ Cancella tutti i progressi</button>
+</div>
+
+<!-- CONFERMA: sì / no -->
+<div id="conferma" class="nascosto">
+  <div class="scatola">
+    <p>Vuoi eliminare tutti i progressi?</p>
+    <div class="due"><button id="btnSi">Sì</button><button id="btnNo">No</button></div>
+  </div>
+</div>
+
+<!-- SESSIONE: i 5 quiz di un tempo -->
+<div id="sessione" class="schermo nascosto">
+  <h1 id="titoloSessione"></h1>
+  <div id="regolaSessione" class="regola"></div>
+  <div id="vetrinaSessione" class="vetrina"></div>
+  <div id="elencoQuiz" class="schermo"></div>
+  <button class="link-menu" id="btnTempi">← torna ai tempi</button>
+</div>
+
+<!-- GIOCO -->
+<div id="gioco" class="schermo nascosto">
+  <div class="progresso">Domanda <span id="num"></span> di <span id="tot"></span> — punti: <span id="punti">0</span></div>
+  <div class="verbo" id="verbo"></div>
+  <div class="consegna" id="consegna"></div>
+  <div class="frase" id="frase"></div>
+  <div class="risposte" id="risposte"></div>
+  <div id="zonaScrivi" class="nascosto" style="flex-direction:column;gap:14px;align-items:center;width:100%">
+    <input type="text" id="campo" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="scrivi qui...">
+    <button id="btnVerifica">Controlla</button>
+  </div>
+  <div id="zonaAnalisi" class="nascosto" style="flex-direction:column;gap:14px;align-items:center;width:100%">
+    <div class="gruppo"><h3>Verbo (infinito)</h3><div class="scelte" id="scelteV"></div></div>
+    <div class="gruppo"><h3>Tempo</h3><div class="scelte" id="scelteT"></div></div>
+    <div class="gruppo"><h3>Persona</h3><div class="scelte" id="scelteP"></div></div>
+    <button id="btnAnalisi" disabled>Controlla</button>
+  </div>
+  <div id="feedback"></div>
+  <div id="regola" class="regola nascosto"></div>
+  <button id="btnAvanti" class="nascosto">Avanti →</button>
+  <button class="link-menu" id="btnEsci">← torna ai quiz</button>
+</div>
+
+<!-- FINE -->
+<div id="fine" class="schermo nascosto">
+  <h1 id="fineTitolo"></h1>
+  <div class="stelle" id="stelle"></div>
+  <p class="sotto" id="fineTesto"></p>
+  <div id="vetrinaFine" class="vetrina"></div>
+  <button id="btnProssimo" class="nascosto">Quiz dopo →</button>
+  <button id="btnRiprova">Riprova</button>
+  <button class="link-menu" id="btnMenu">← torna ai quiz</button>
+</div>
+
+<script src="verbi.js"></script>
+<script>
+// I 5 tipi di quiz, uguali in ogni tempo
+const QUIZ = [
+  { id: 'scegli',   nome: '1️⃣ Scegli la forma' },
+  { id: 'scrivi',   nome: '2️⃣ Scrivi la forma' },
+  { id: 'intruso',  nome: '3️⃣ Trova l\'intruso' },
+  { id: 'persona',  nome: '4️⃣ Cambia persona' },
+  { id: 'analisi',  nome: '5️⃣ Analisi grammaticale' }
+];
+const DOMANDE = 10, SOGLIA = 8;
+const $ = id => document.getElementById(id);
+
+// --- record salvati (se il telefono non lo permette, il gioco funziona lo stesso) ---
+function leggiRecord() { try { return JSON.parse(localStorage.getItem('verbi-record-2')) || {}; } catch (e) { return {}; } }
+function salvaRecord(r) { try { localStorage.setItem('verbi-record-2', JSON.stringify(r)); } catch (e) {} }
+const chiave = (t, q) => TEMPI[t].id + ':' + QUIZ[q].id;
+
+let tIdx = 0, qIdx = 0, domande = [], idx = 0, punti = 0, risposto = false;
+let selV = null, selT = null, selP = null;
+
+const mescola = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
+const casuale = a => a[Math.floor(Math.random() * a.length)];
+const senzaDoppi = a => [...new Set(a)];
+
+function mostra(id) {
+  ['menu', 'sessione', 'gioco', 'fine'].forEach(s => $(s).classList.toggle('nascosto', s !== id));
+}
+
+// ---------- COPPE ----------
+// Coppa d'oro = tutti e 5 i quiz di un tempo fatti 10 su 10. Coppa di diamante = tutti gli 8 tempi d'oro.
+function sessionePerfetta(rec, i) { return QUIZ.every((q, j) => rec[chiave(i, j)] === DOMANDE); }
+function tuttePerfette(rec) { return TEMPI.every((t, i) => sessionePerfetta(rec, i)); }
+
+function coppaOro(nome) {
+  const d = document.createElement('div');
+  d.className = 'coppa oro';
+  d.innerHTML = '<span class="grande">🏆⚽</span>Coppa dei calciatori d\'oro' + (nome ? '<br><small>' + nome + '</small>' : '');
+  return d;
+}
+function coppaDiamante() {
+  const d = document.createElement('div');
+  d.className = 'coppa diamante';
+  d.innerHTML = '<span class="grande">💎🏆⚽</span>Coppa dei calciatori di diamante<br><small>Tutti i tempi perfetti!</small>';
+  return d;
+}
+
+// ---------- MENU E SESSIONE ----------
+function disegnaMenu() {
+  const rec = leggiRecord();
+  $('vetrinaDiamante').innerHTML = '';
+  if (tuttePerfette(rec)) $('vetrinaDiamante').appendChild(coppaDiamante());
+  $('elencoSessioni').innerHTML = '';
+  TEMPI.forEach((T, i) => {
+    const fatti = QUIZ.filter((q, j) => (rec[chiave(i, j)] || 0) >= SOGLIA).length;
+    const b = document.createElement('button');
+    b.className = 'livello sessione';
+    b.innerHTML = '<span>' + (i + 1) + '. ' + T.nome + '</span><small>' + (sessionePerfetta(rec, i) ? '🏆 ' : fatti === QUIZ.length ? '⭐ ' : '') + fatti + '/' + QUIZ.length + '</small>';
+    b.onclick = () => apriSessione(i);
+    $('elencoSessioni').appendChild(b);
+  });
+  // livello 9: si apre dopo aver superato l'analisi grammaticale di tutti gli 8 tempi
+  const analisiFatte = TEMPI.every((t, i) => (rec[chiave(i, QUIZ.length - 1)] || 0) >= SOGLIA);
+  const m = document.createElement('button');
+  m.className = 'livello sessione';
+  m.disabled = !analisiFatte;
+  m.innerHTML = '<span>9. Tutti i tempi mischiati</span><small>' +
+    (analisiFatte ? (rec.misto != null ? 'record ' + rec.misto + '/' + DOMANDE : '') : '🔒 prima l\'analisi di tutti i tempi') + '</small>';
+  m.onclick = avviaMisto;
+  $('elencoSessioni').appendChild(m);
+  mostra('menu');
+}
+
+function apriSessione(i) {
+  tIdx = i;
+  const rec = leggiRecord();
+  $('titoloSessione').textContent = TEMPI[i].nome;
+  $('regolaSessione').textContent = TEMPI[i].regola;
+  $('vetrinaSessione').innerHTML = '';
+  if (sessionePerfetta(rec, i)) $('vetrinaSessione').appendChild(coppaOro(TEMPI[i].nome));
+  $('elencoQuiz').innerHTML = '';
+  QUIZ.forEach((Q, j) => {
+    const sbloccato = j === 0 || (rec[chiave(i, j - 1)] || 0) >= SOGLIA;
+    const b = document.createElement('button');
+    b.className = 'livello';
+    b.disabled = !sbloccato;
+    const r = rec[chiave(i, j)];
+    b.innerHTML = '<span>' + Q.nome + '</span><small>' + (sbloccato ? (r != null ? 'record ' + r + '/' + DOMANDE : '') : '🔒') + '</small>';
+    b.onclick = () => avvia(j);
+    $('elencoQuiz').appendChild(b);
+  });
+  mostra('sessione');
+}
+
+// ---------- COSTRUZIONE DELLE DOMANDE ----------
+function altriTempi(da, quanti, escludi) {
+  return mescola(TEMPI.map(t => t.id).filter(id => id !== da && id !== escludi)).slice(0, quanti);
+}
+
+function nuovaDomanda(tipo) {
+  if (tipo === 'mista') {
+    // analisi grammaticale difficile: la forma può essere di QUALSIASI tempo, e si sceglie tra tutti i verbi e tutti i tempi
+    const v = casuale(VERBI), t = casuale(TEMPI), p = Math.floor(Math.random() * 6), giusta = forma(v, t.id, p);
+    return { tipo: 'analisi', modo: 'analisi', v, p, tempo: t.id, giusta, chiave: v.inf + t.id + p,
+      consegna: 'Fai l\'analisi grammaticale', frase: giusta,
+      opzioniV: mescola(VERBI.map(x => x.inf)), opzioniT: TEMPI.map(x => x.id) };
+  }
+  const T = TEMPI[tIdx], id = T.id;
+  const v = casuale(VERBI), p = Math.floor(Math.random() * 6);
+  const giusta = forma(v, id, p);
+  const base = { tipo, v, p, tempo: id, giusta, chiave: v.inf + p };
+
+  if (tipo === 'scegli') {
+    // trappole: le forme delle altre persone + la stessa persona in altri tempi
+    const altre = [0, 1, 2, 3, 4, 5].filter(q => q !== p).map(q => forma(v, id, q));
+    const stessaPersona = TEMPI.filter(t => t.id !== id).map(t => forma(v, t.id, p));
+    const sbagliate = mescola(senzaDoppi([...altre, ...stessaPersona]).filter(f => f !== giusta)).slice(0, 3);
+    return { ...base, modo: 'scegli', consegna: 'Scegli la forma giusta', frase: PERSONE[p] + ' …', opzioni: mescola([giusta, ...sbagliate]) };
+  }
+  if (tipo === 'scrivi') {
+    return { ...base, modo: 'scrivi', consegna: 'Scrivi la forma giusta', frase: PERSONE[p] + ' …' };
+  }
+  if (tipo === 'intruso') {
+    // 3 forme del tempo + 1 forma di un altro tempo che non esiste in questo
+    const tutte = [0, 1, 2, 3, 4, 5].map(q => forma(v, id, q));
+    const buone = mescola(senzaDoppi(tutte)).slice(0, 3);
+    const altre = senzaDoppi(TEMPI.filter(t => t.id !== id).flatMap(t => [0, 1, 2, 3, 4, 5].map(q => forma(v, t.id, q)))).filter(f => !tutte.includes(f));
+    const intruso = casuale(altre);
+    return { ...base, modo: 'scegli', giusta: intruso, chiave: v.inf + intruso, consegna: 'Quale NON è del ' + T.nome.toLowerCase() + '?', frase: v.inf, opzioni: mescola([intruso, ...buone]) };
+  }
+  if (tipo === 'persona') {
+    let q;
+    do { q = Math.floor(Math.random() * 6); } while (q === p || forma(v, id, q) === giusta);
+    return { ...base, modo: 'scrivi', giusta: forma(v, id, q), chiave: v.inf + p + q,
+      consegna: 'Ora scrivilo per «' + PERSONE[q] + '»', frase: PERSONE[p] + ' ' + giusta };
+  }
+  // analisi grammaticale: di quale verbo, tempo e persona è questa forma?
+  const altriV = mescola(VERBI.filter(x => x !== v)).slice(0, 3).map(x => x.inf);
+  const altriT = altriTempi(id, 3).concat([]);
+  return { ...base, modo: 'analisi', consegna: 'Fai l\'analisi grammaticale', frase: giusta,
+    opzioniV: mescola([v.inf, ...altriV]), opzioniT: mescola([id, ...altriT]) };
+}
+
+function costruisciDomande(tipo) {
+  const lista = [];
+  while (lista.length < DOMANDE) {
+    const d = nuovaDomanda(tipo);
+    if (!lista.some(x => x.chiave === d.chiave)) lista.push(d);
+  }
+  return lista;
+}
+
+// ---------- GIOCO ----------
+let misto = false;   // true = livello 9, tutti i tempi mischiati (non appartiene a nessun tempo)
+
+function avviaMisto() {
+  misto = true; idx = 0; punti = 0;
+  domande = costruisciDomande('mista');
+  $('tot').textContent = DOMANDE;
+  mostra('gioco');
+  mostraDomanda();
+}
+
+function avvia(j) {
+  misto = false;
+  qIdx = j; idx = 0; punti = 0;
+  domande = costruisciDomande(QUIZ[j].id);
+  $('tot').textContent = DOMANDE;
+  mostra('gioco');
+  mostraDomanda();
+}
+
+function nomeTempo(id) { return TEMPI.find(t => t.id === id).nome; }
+
+function mostraDomanda() {
+  const d = domande[idx];
+  risposto = false;
+  $('num').textContent = idx + 1;
+  $('punti').textContent = punti;
+  $('verbo').textContent = misto ? 'Analisi grammaticale — tutti i tempi'
+    : d.tipo === 'analisi' ? 'Analisi grammaticale' : d.v.inf + ' — ' + TEMPI[tIdx].nome;
+  $('consegna').textContent = d.consegna;
+  $('frase').textContent = d.frase;
+  $('feedback').textContent = ''; $('feedback').className = '';
+  $('regola').classList.add('nascosto');
+  $('btnAvanti').classList.add('nascosto');
+  $('risposte').innerHTML = '';
+  $('zonaScrivi').classList.add('nascosto'); $('zonaScrivi').style.display = '';
+  $('zonaAnalisi').classList.add('nascosto'); $('zonaAnalisi').style.display = '';
+
+  if (d.modo === 'scegli') {
+    d.opzioni.forEach(o => {
+      const b = document.createElement('button');
+      b.textContent = o;
+      b.onclick = () => rispondi(o, b);
+      $('risposte').appendChild(b);
+    });
+  } else if (d.modo === 'scrivi') {
+    $('zonaScrivi').classList.remove('nascosto'); $('zonaScrivi').style.display = 'flex';
+    $('campo').value = ''; $('campo').disabled = false; $('btnVerifica').disabled = false;
+    $('campo').focus();
+  } else {
+    selV = selT = selP = null;
+    $('zonaAnalisi').classList.remove('nascosto'); $('zonaAnalisi').style.display = 'flex';
+    riempiScelte('scelteV', d.opzioniV, x => x, v => { selV = v; });
+    riempiScelte('scelteT', d.opzioniT, nomeTempo, t => { selT = t; });
+    riempiScelte('scelteP', [0, 1, 2, 3, 4, 5], i => NOMI_PERSONE[i], p => { selP = p; });
+    $('btnAnalisi').disabled = true;
+  }
+}
+
+function riempiScelte(contenitore, valori, etichetta, impostare) {
+  const box = $(contenitore);
+  box.innerHTML = '';
+  valori.forEach(val => {
+    const b = document.createElement('button');
+    b.textContent = etichetta(val);
+    b.onclick = () => {
+      if (risposto) return;
+      [...box.children].forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+      impostare(val);
+      $('btnAnalisi').disabled = selV == null || selT == null || selP == null;
+    };
+    b.dataset.val = val;
+    box.appendChild(b);
+  });
+}
+
+function chiudiDomanda(ok, testoSbagliato) {
+  risposto = true;
+  if (ok) punti++;
+  $('feedback').textContent = ok ? '✅ Giusto!' : testoSbagliato;
+  $('feedback').className = ok ? 'ok' : 'no';
+  if (!ok) { $('regola').textContent = TEMPI.find(t => t.id === domande[idx].tempo).regola; $('regola').classList.remove('nascosto'); }
+  $('punti').textContent = punti;
+  $('btnAvanti').classList.remove('nascosto');
+}
+
+function rispondi(scelta, bottone) {
+  if (risposto) return;
+  const d = domande[idx], ok = scelta.trim().toLowerCase() === d.giusta;
+  if (bottone) {
+    [...$('risposte').children].forEach(b => { if (b.textContent === d.giusta) b.classList.add('giusta'); b.disabled = true; });
+    if (!ok) bottone.classList.add('sbagliata');
+  } else {
+    $('campo').disabled = true; $('btnVerifica').disabled = true;
+  }
+  chiudiDomanda(ok, '❌ Era: ' + d.giusta);
+}
+
+function controllaAnalisi() {
+  if (risposto || selV == null || selT == null || selP == null) return;
+  const d = domande[idx];
+  // la persona è giusta se la forma coincide (es. "sono" vale per io e per loro)
+  const okV = selV === d.v.inf;
+  const okT = selT === d.tempo || forma(d.v, selT, selP) === d.giusta;
+  const okP = forma(d.v, d.tempo, selP) === d.giusta;
+  const colora = (box, val, ok) => [...$(box).children].forEach(b => {
+    if (b.dataset.val === String(val)) { b.classList.remove('sel'); b.classList.add(ok ? 'giusta' : 'sbagliata'); }
+  });
+  colora('scelteV', selV, okV); colora('scelteT', selT, okT); colora('scelteP', selP, okP);
+  const ok = okV && forma(d.v, selT, selP) === d.giusta;
+  chiudiDomanda(ok, '❌ Era: ' + d.v.inf + ' · ' + nomeTempo(d.tempo) + ' · ' + NOMI_PERSONE[d.p]);
+  $('btnAnalisi').disabled = true;
+}
+
+function avanti() {
+  idx++;
+  if (idx < DOMANDE) return mostraDomanda();
+  if (misto) {
+    const rec = leggiRecord();
+    if (rec.misto == null || punti > rec.misto) { rec.misto = punti; salvaRecord(rec); }
+    $('vetrinaFine').innerHTML = '';
+    $('fineTitolo').textContent = punti + ' su ' + DOMANDE;
+    $('stelle').textContent = punti === DOMANDE ? '⭐⭐⭐' : punti >= SOGLIA ? '⭐⭐' : punti >= 5 ? '⭐' : '';
+    $('fineTesto').textContent = punti >= SOGLIA ? 'Bravissimo! Sai riconoscere tutti i tempi!' : 'Questo è il livello più difficile. Riprova!';
+    $('btnProssimo').classList.add('nascosto');
+    return mostra('fine');
+  }
+  const rec = leggiRecord(), k = chiave(tIdx, qIdx);
+  const eraOro = sessionePerfetta(rec, tIdx), eraDiamante = tuttePerfette(rec);
+  if (rec[k] == null || punti > rec[k]) { rec[k] = punti; salvaRecord(rec); }
+  $('vetrinaFine').innerHTML = '';
+  if (!eraDiamante && tuttePerfette(rec)) $('vetrinaFine').appendChild(coppaDiamante());
+  else if (!eraOro && sessionePerfetta(rec, tIdx)) $('vetrinaFine').appendChild(coppaOro(TEMPI[tIdx].nome));
+  const passato = punti >= SOGLIA, ultimo = qIdx === QUIZ.length - 1;
+  $('fineTitolo').textContent = punti + ' su ' + DOMANDE;
+  $('stelle').textContent = punti === DOMANDE ? '⭐⭐⭐' : passato ? '⭐⭐' : punti >= 5 ? '⭐' : '';
+  $('fineTesto').textContent = passato
+    ? (ultimo ? 'Bravo! Hai finito tutti i quiz del ' + TEMPI[tIdx].nome.toLowerCase() + '!' : 'Bravo! Hai sbloccato il quiz dopo.')
+    : 'Per passare servono ' + SOGLIA + ' su ' + DOMANDE + '. Riprova!';
+  $('btnProssimo').classList.toggle('nascosto', !(passato && !ultimo));
+  mostra('fine');
+}
+
+$('btnVerifica').onclick = () => { if ($('campo').value.trim()) rispondi($('campo').value, null); };
+$('campo').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.repeat && $('campo').value.trim()) { e.preventDefault(); rispondi($('campo').value, null); }
+});
+// Invio fa tutto: controlla l'analisi, e dopo la risposta passa alla domanda dopo
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.repeat || e.defaultPrevented || $('gioco').classList.contains('nascosto')) return;
+  if (!$('btnAvanti').classList.contains('nascosto')) { e.preventDefault(); avanti(); }
+  else if (!risposto && !$('zonaAnalisi').classList.contains('nascosto') && !$('btnAnalisi').disabled) { e.preventDefault(); controllaAnalisi(); }
+});
+$('btnAnalisi').onclick = controllaAnalisi;
+$('btnAvanti').onclick = avanti;
+$('btnEsci').onclick = $('btnMenu').onclick = () => misto ? disegnaMenu() : apriSessione(tIdx);
+$('btnTempi').onclick = disegnaMenu;
+$('btnReset').onclick = () => $('conferma').classList.remove('nascosto');
+$('btnNo').onclick = () => $('conferma').classList.add('nascosto');
+$('btnSi').onclick = () => { salvaRecord({}); $('conferma').classList.add('nascosto'); disegnaMenu(); };
+$('btnRiprova').onclick = () => misto ? avviaMisto() : avvia(qIdx);
+$('btnProssimo').onclick = () => avvia(qIdx + 1);
+
+disegnaMenu();
+</script>
+</body>
+</html>
