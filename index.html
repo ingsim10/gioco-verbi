@@ -10,7 +10,8 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: system-ui, -apple-system, sans-serif;
-    background: linear-gradient(180deg, #fff7ed 0%, #fdfaf6 100%);
+    background: #fff7ed url('sfondo.svg') repeat;
+    background-size: 340px 340px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -29,7 +30,14 @@
   button:active { transform: scale(0.97); }
   button:disabled { background: #d6d3d1; cursor: default; transform: none; }
   .schermo { display: flex; flex-direction: column; align-items: center; gap: 18px; width: 100%; max-width: 520px; }
+  body > .schermo {
+    background: rgba(255, 255, 255, .9); border-radius: 26px; padding: 24px 18px;
+    box-shadow: 0 6px 24px rgba(67, 20, 7, .15);
+  }
   .nascosto { display: none !important; }
+  .bonus { background: linear-gradient(135deg, #7c3aed, #db2777); }
+  .coppa svg { display: block; margin: 0 auto 6px; }
+  .mini svg { vertical-align: -3px; }
   .livello {
     width: 100%; max-width: 400px; display: flex; justify-content: space-between;
     align-items: center; gap: 12px; font-size: 1.1rem; padding: 16px 20px; text-align: left;
@@ -88,7 +96,7 @@
 <!-- MENU: le 8 sessioni -->
 <div id="menu" class="schermo">
   <h1>🏃 Il gioco dei verbi</h1>
-  <p class="sotto">Scegli un tempo. Ogni tempo ha 5 quiz: supera un quiz con almeno <b>8 su 10</b> per sbloccare il prossimo!</p>
+  <p class="sotto">Scegli un tempo. Ogni tempo ha 4 quiz: supera un quiz con almeno <b>8 su 10</b> per sbloccare il prossimo!</p>
   <div id="vetrinaDiamante" class="vetrina"></div>
   <div id="elencoSessioni" class="schermo"></div>
   <button class="link-reset" id="btnReset">🗑️ Cancella tutti i progressi</button>
@@ -147,13 +155,13 @@
 
 <script src="verbi.js"></script>
 <script>
-// I 5 tipi di quiz, uguali in ogni tempo
+// I 4 tipi di quiz, uguali in ogni tempo.
+// L'analisi grammaticale non è più qui (dentro un tempo il tempo era già scritto): sta nel livello bonus.
 const QUIZ = [
   { id: 'scegli',   nome: '1️⃣ Scegli la forma' },
   { id: 'scrivi',   nome: '2️⃣ Scrivi la forma' },
   { id: 'intruso',  nome: '3️⃣ Trova l\'intruso' },
-  { id: 'persona',  nome: '4️⃣ Cambia persona' },
-  { id: 'analisi',  nome: '5️⃣ Analisi grammaticale' }
+  { id: 'persona',  nome: '4️⃣ Cambia persona' }
 ];
 const DOMANDE = 10, SOGLIA = 8;
 const $ = id => document.getElementById(id);
@@ -175,20 +183,46 @@ function mostra(id) {
 }
 
 // ---------- COPPE ----------
-// Coppa d'oro = tutti e 5 i quiz di un tempo fatti 10 su 10. Coppa di diamante = tutti gli 8 tempi d'oro.
+// Coppa d'oro = tutti e 4 i quiz di un tempo fatti 10 su 10. Coppa di diamante = tutti gli 8 tempi d'oro.
 function sessionePerfetta(rec, i) { return QUIZ.every((q, j) => rec[chiave(i, j)] === DOMANDE); }
 function tuttePerfette(rec) { return TEMPI.every((t, i) => sessionePerfetta(rec, i)); }
+
+// Disegno della coppa del mondo: base con due fasce verdi, due figure che salgono a spirale, il mondo in cima
+let contaCoppe = 0;
+function disegnoCoppa(tipo, alta) {
+  const c = tipo === 'diamante'
+    ? ['#f0f9ff', '#7dd3fc', '#0369a1', '#0c4a6e', '#38bdf8']
+    : ['#fef9c3', '#facc15', '#b45309', '#78350f', '#15803d'];
+  const g = 'grad-' + tipo + '-' + (++contaCoppe);   // nome unico: i colori non spariscono se un'altra coppa è nascosta
+  return '<svg width="' + Math.round(alta * 0.6) + '" height="' + alta + '" viewBox="0 0 60 100" aria-hidden="true">' +
+    '<defs><linearGradient id="' + g + '" x1="0" y1="0" x2="1" y2="1">' +
+    '<stop offset="0" stop-color="' + c[0] + '"/><stop offset=".45" stop-color="' + c[1] + '"/><stop offset="1" stop-color="' + c[2] + '"/></linearGradient></defs>' +
+    // corpo: due figure che si avvolgono
+    '<path d="M16 80 C20 67 24 61 25 54 C22 47 13 43 11 34 L49 34 C47 43 38 47 35 54 C36 61 40 67 44 80 Z" fill="url(#' + g + ')" stroke="' + c[3] + '" stroke-width="1.2"/>' +
+    '<path d="M20 78 C26 66 34 58 30 48 C27 42 18 40 15 35" fill="none" stroke="' + c[3] + '" stroke-width="1.2" opacity=".7"/>' +
+    '<path d="M40 78 C34 66 26 58 30 48 C33 42 42 40 45 35" fill="none" stroke="' + c[3] + '" stroke-width="1.2" opacity=".7"/>' +
+    // il mondo in cima
+    '<circle cx="30" cy="21" r="16" fill="url(#' + g + ')" stroke="' + c[3] + '" stroke-width="1.2"/>' +
+    '<ellipse cx="30" cy="21" rx="7" ry="16" fill="none" stroke="' + c[3] + '" stroke-width="1" opacity=".6"/>' +
+    '<path d="M14 21 H46 M17 13 H43 M17 29 H43" stroke="' + c[3] + '" stroke-width="1" opacity=".6"/>' +
+    '<ellipse cx="24" cy="14" rx="4" ry="2.5" fill="#fff" opacity=".55"/>' +
+    // base con le due fasce verdi
+    '<rect x="13" y="79" width="34" height="17" rx="3" fill="url(#' + g + ')" stroke="' + c[3] + '" stroke-width="1.2"/>' +
+    '<rect x="13" y="83" width="34" height="3.5" fill="' + c[4] + '"/>' +
+    '<rect x="13" y="89.5" width="34" height="3.5" fill="' + c[4] + '"/>' +
+    '</svg>';
+}
 
 function coppaOro(nome) {
   const d = document.createElement('div');
   d.className = 'coppa oro';
-  d.innerHTML = '<span class="grande">🏆⚽</span>Coppa dei calciatori d\'oro' + (nome ? '<br><small>' + nome + '</small>' : '');
+  d.innerHTML = disegnoCoppa('oro', 110) + 'Coppa dei calciatori d\'oro' + (nome ? '<br><small>' + nome + '</small>' : '');
   return d;
 }
 function coppaDiamante() {
   const d = document.createElement('div');
   d.className = 'coppa diamante';
-  d.innerHTML = '<span class="grande">💎🏆⚽</span>Coppa dei calciatori di diamante<br><small>Tutti i tempi perfetti!</small>';
+  d.innerHTML = disegnoCoppa('diamante', 130) + '💎 Coppa dei calciatori di diamante 💎<br><small>Tutti i tempi perfetti!</small>';
   return d;
 }
 
@@ -202,17 +236,15 @@ function disegnaMenu() {
     const fatti = QUIZ.filter((q, j) => (rec[chiave(i, j)] || 0) >= SOGLIA).length;
     const b = document.createElement('button');
     b.className = 'livello sessione';
-    b.innerHTML = '<span>' + (i + 1) + '. ' + T.nome + '</span><small>' + (sessionePerfetta(rec, i) ? '🏆 ' : fatti === QUIZ.length ? '⭐ ' : '') + fatti + '/' + QUIZ.length + '</small>';
+    b.innerHTML = '<span>' + (i + 1) + '. ' + T.nome + '</span><small class="mini">' + (sessionePerfetta(rec, i) ? disegnoCoppa('oro', 22) + ' ' : fatti === QUIZ.length ? '⭐ ' : '') + fatti + '/' + QUIZ.length + '</small>';
     b.onclick = () => apriSessione(i);
     $('elencoSessioni').appendChild(b);
   });
-  // livello 9: si apre dopo aver superato l'analisi grammaticale di tutti gli 8 tempi
-  const analisiFatte = TEMPI.every((t, i) => (rec[chiave(i, QUIZ.length - 1)] || 0) >= SOGLIA);
+  // livello bonus: solo analisi grammaticale, con tutti i verbi e tutti i tempi (aperto da subito)
   const m = document.createElement('button');
-  m.className = 'livello sessione';
-  m.disabled = !analisiFatte;
-  m.innerHTML = '<span>9. Tutti i tempi mischiati</span><small>' +
-    (analisiFatte ? (rec.misto != null ? 'record ' + rec.misto + '/' + DOMANDE : '') : '🔒 prima l\'analisi di tutti i tempi') + '</small>';
+  m.className = 'livello bonus';
+  m.innerHTML = '<span>⭐ Livello bonus<br><small>Analisi grammaticale, tutti i tempi</small></span><small>' +
+    (rec.misto != null ? 'record ' + rec.misto + '/' + DOMANDE : '') + '</small>';
   m.onclick = avviaMisto;
   $('elencoSessioni').appendChild(m);
   mostra('menu');
@@ -240,10 +272,6 @@ function apriSessione(i) {
 }
 
 // ---------- COSTRUZIONE DELLE DOMANDE ----------
-function altriTempi(da, quanti, escludi) {
-  return mescola(TEMPI.map(t => t.id).filter(id => id !== da && id !== escludi)).slice(0, quanti);
-}
-
 function nuovaDomanda(tipo) {
   if (tipo === 'mista') {
     // analisi grammaticale difficile: la forma può essere di QUALSIASI tempo, e si sceglie tra tutti i verbi e tutti i tempi
@@ -275,17 +303,11 @@ function nuovaDomanda(tipo) {
     const intruso = casuale(altre);
     return { ...base, modo: 'scegli', giusta: intruso, chiave: v.inf + intruso, consegna: 'Quale NON è del ' + T.nome.toLowerCase() + '?', frase: v.inf, opzioni: mescola([intruso, ...buone]) };
   }
-  if (tipo === 'persona') {
-    let q;
-    do { q = Math.floor(Math.random() * 6); } while (q === p || forma(v, id, q) === giusta);
-    return { ...base, modo: 'scrivi', giusta: forma(v, id, q), chiave: v.inf + p + q,
-      consegna: 'Ora scrivilo per «' + PERSONE[q] + '»', frase: PERSONE[p] + ' ' + giusta };
-  }
-  // analisi grammaticale: di quale verbo, tempo e persona è questa forma?
-  const altriV = mescola(VERBI.filter(x => x !== v)).slice(0, 3).map(x => x.inf);
-  const altriT = altriTempi(id, 3).concat([]);
-  return { ...base, modo: 'analisi', consegna: 'Fai l\'analisi grammaticale', frase: giusta,
-    opzioniV: mescola([v.inf, ...altriV]), opzioniT: mescola([id, ...altriT]) };
+  // ultimo tipo: cambia persona
+  let q;
+  do { q = Math.floor(Math.random() * 6); } while (q === p || forma(v, id, q) === giusta);
+  return { ...base, modo: 'scrivi', giusta: forma(v, id, q), chiave: v.inf + p + q,
+    consegna: 'Ora scrivilo per «' + PERSONE[q] + '»', frase: PERSONE[p] + ' ' + giusta };
 }
 
 function costruisciDomande(tipo) {
@@ -324,8 +346,8 @@ function mostraDomanda() {
   risposto = false;
   $('num').textContent = idx + 1;
   $('punti').textContent = punti;
-  $('verbo').textContent = misto ? 'Analisi grammaticale — tutti i tempi'
-    : d.tipo === 'analisi' ? 'Analisi grammaticale' : d.v.inf + ' — ' + TEMPI[tIdx].nome;
+  $('verbo').textContent = misto ? '⭐ Bonus — tutti i tempi' : d.v.inf + ' — ' + TEMPI[tIdx].nome;
+  $('btnEsci').textContent = misto ? '← torna al menu' : '← torna ai quiz';
   $('consegna').textContent = d.consegna;
   $('frase').textContent = d.frase;
   $('feedback').textContent = ''; $('feedback').className = '';
@@ -423,6 +445,7 @@ function avanti() {
     $('stelle').textContent = punti === DOMANDE ? '⭐⭐⭐' : punti >= SOGLIA ? '⭐⭐' : punti >= 5 ? '⭐' : '';
     $('fineTesto').textContent = punti >= SOGLIA ? 'Bravissimo! Sai riconoscere tutti i tempi!' : 'Questo è il livello più difficile. Riprova!';
     $('btnProssimo').classList.add('nascosto');
+    $('btnMenu').textContent = '← torna al menu';
     return mostra('fine');
   }
   const rec = leggiRecord(), k = chiave(tIdx, qIdx);
@@ -438,6 +461,7 @@ function avanti() {
     ? (ultimo ? 'Bravo! Hai finito tutti i quiz del ' + TEMPI[tIdx].nome.toLowerCase() + '!' : 'Bravo! Hai sbloccato il quiz dopo.')
     : 'Per passare servono ' + SOGLIA + ' su ' + DOMANDE + '. Riprova!';
   $('btnProssimo').classList.toggle('nascosto', !(passato && !ultimo));
+  $('btnMenu').textContent = '← torna ai quiz';
   mostra('fine');
 }
 

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="340" viewBox="0 0 340 340">
+  <g opacity=".42" stroke="#7c2d12" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+
+    <!-- pila di libri -->
+    <g transform="translate(18 40)">
+      <rect x="0" y="50" width="90" height="18" rx="3" fill="#f87171"/>
+      <rect x="6" y="54" width="78" height="3" fill="#fff" stroke="none"/>
+      <rect x="8" y="32" width="80" height="18" rx="3" fill="#60a5fa"/>
+      <rect x="14" y="36" width="68" height="3" fill="#fff" stroke="none"/>
+      <rect x="2" y="14" width="84" height="18" rx="3" fill="#4ade80"/>
+      <rect x="8" y="18" width="72" height="3" fill="#fff" stroke="none"/>
+      <!-- mela sulla pila -->
+      <circle cx="44" cy="4" r="9" fill="#ef4444"/>
+      <path d="M44 -5 q3 -6 8 -6" fill="none"/>
+    </g>
+
+    <!-- quaderno a spirale -->
+    <g transform="translate(200 18) rotate(8)">
+      <rect x="0" y="0" width="74" height="96" rx="5" fill="#93c5fd"/>
+      <rect x="18" y="20" width="44" height="18" rx="3" fill="#fff"/>
+      <path d="M24 26 H56 M24 32 H48" stroke-width="1.5"/>
+      <g fill="#fff">
+        <circle cx="0" cy="12" r="4"/><circle cx="0" cy="26" r="4"/><circle cx="0" cy="40" r="4"/>
+        <circle cx="0" cy="54" r="4"/><circle cx="0" cy="68" r="4"/><circle cx="0" cy="82" r="4"/>
+      </g>
+    </g>
+
+    <!-- matita in diagonale -->
+    <g transform="translate(30 190) rotate(-30)">
+      <rect x="0" y="0" width="100" height="16" fill="#facc15"/>
+      <path d="M0 5.3 H100 M0 10.6 H100" stroke-width="1"/>
+      <polygon points="100,0 124,8 100,16" fill="#fde68a"/>
+      <polygon points="116,5.3 124,8 116,10.7" fill="#7c2d12"/>
+      <rect x="-10" y="0" width="10" height="16" fill="#d6d3d1"/>
+      <rect x="-22" y="0" width="12" height="16" rx="4" fill="#f9a8d4"/>
+    </g>
+
+    <!-- astuccio con la cerniera -->
+    <g transform="translate(180 170)">
+      <rect x="0" y="0" width="120" height="52" rx="18" fill="#c4b5fd"/>
+      <path d="M14 16 H106" stroke-dasharray="4 3" stroke-width="2"/>
+      <rect x="98" y="11" width="8" height="16" rx="3" fill="#fde68a"/>
+      <!-- pennarello che esce -->
+      <rect x="-30" y="-12" width="44" height="12" rx="4" fill="#fb923c" transform="rotate(-12)"/>
+    </g>
+
+    <!-- righello -->
+    <g transform="translate(150 290) rotate(-6)">
+      <rect x="0" y="0" width="140" height="22" rx="3" fill="#fdba74"/>
+      <path d="M12 0 V10 M24 0 V6 M36 0 V10 M48 0 V6 M60 0 V10 M72 0 V6 M84 0 V10 M96 0 V6 M108 0 V10 M120 0 V6 M132 0 V10" stroke-width="1.5"/>
+    </g>
+
+    <!-- libro aperto -->
+    <g transform="translate(14 262)">
+      <path d="M0 6 Q30 -6 60 6 V54 Q30 42 0 54 Z" fill="#fff"/>
+      <path d="M60 6 Q90 -6 120 6 V54 Q90 42 60 54 Z" fill="#fff"/>
+      <path d="M10 16 Q30 9 50 16 M10 26 Q30 19 50 26 M10 36 Q30 29 50 36 M70 16 Q90 9 110 16 M70 26 Q90 19 110 26" stroke-width="1.3"/>
+    </g>
+
+    <!-- gomma -->
+    <g transform="translate(268 112) rotate(18)">
+      <rect x="0" y="0" width="40" height="20" rx="4" fill="#f9a8d4"/>
+      <rect x="22" y="0" width="18" height="20" rx="3" fill="#60a5fa"/>
+    </g>
+
+    <!-- stelline -->
+    <g fill="#facc15" stroke-width="1.5">
+      <path d="M150 120 l4 8 9 1 -7 6 2 9 -8 -5 -8 5 2 -9 -7 -6 9 -1 z"/>
+      <path d="M300 255 l3 6 7 1 -5 4 1 7 -6 -4 -6 4 1 -7 -5 -4 7 -1 z"/>
+    </g>
+  </g>
+</svg>
